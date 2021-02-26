@@ -12,7 +12,7 @@ const wrapReactChildren = (createElement, children) =>
     },
   })
 
-export default class VueContainer extends React.Component {
+export default class VueContainer extends React.PureComponent {
   constructor (props) {
     super(props)
 
@@ -33,18 +33,12 @@ export default class VueContainer extends React.Component {
     }
   }
 
-  componentWillReceiveProps (nextProps) {
-    const { component, ...props } = nextProps
+  componentDidMount () {
+    this.updateVueComponent()
+  }
 
-    if (this.currentVueComponent !== component) {
-      this.updateVueComponent(this.props.component, component)
-    }
-    /**
-     * NOTE: we're not comparing this.props and nextProps here, because I didn't want to write a
-     * function for deep object comparison. I don't know if this hurts performance a lot, maybe
-     * we do need to compare those objects.
-     */
-    Object.assign(this.vueInstance.$data, props)
+  componentDidUpdate () {
+    this.updateVueComponent()
   }
 
   componentWillUnmount () {
@@ -84,14 +78,24 @@ export default class VueContainer extends React.Component {
     })
   }
 
-  updateVueComponent (prevComponent, nextComponent) {
-    this.currentVueComponent = nextComponent
+  updateVueComponent () {
+    const { component, ...props } = this.props
+
+    if (this.currentVueComponent !== component) {
+      /**
+      * Replace the component in the Vue instance and update it.
+      */
+      this.currentVueComponent = component
+      this.vueInstance.$options.components[VUE_COMPONENT_NAME] = component
+      this.vueInstance.$forceUpdate()
+    }
 
     /**
-     * Replace the component in the Vue instance and update it.
+     * NOTE: we're not comparing this.props and nextProps here, because I didn't want to write a
+     * function for deep object comparison. I don't know if this hurts performance a lot, maybe
+     * we do need to compare those objects.
      */
-    this.vueInstance.$options.components[VUE_COMPONENT_NAME] = nextComponent
-    this.vueInstance.$forceUpdate()
+    Object.assign(this.vueInstance.$data, props)
   }
 
   render () {

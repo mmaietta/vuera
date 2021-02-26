@@ -179,8 +179,8 @@ var wrapReactChildren = function wrapReactChildren(createElement, children) {
   });
 };
 
-var VueContainer = function (_React$Component) {
-  inherits(VueContainer, _React$Component);
+var VueContainer = function (_React$PureComponent) {
+  inherits(VueContainer, _React$PureComponent);
 
   function VueContainer(props) {
     classCallCheck(this, VueContainer);
@@ -206,21 +206,14 @@ var VueContainer = function (_React$Component) {
   }
 
   createClass(VueContainer, [{
-    key: 'componentWillReceiveProps',
-    value: function componentWillReceiveProps(nextProps) {
-      var component = nextProps.component,
-          props = objectWithoutProperties(nextProps, ['component']);
-
-
-      if (this.currentVueComponent !== component) {
-        this.updateVueComponent(this.props.component, component);
-      }
-      /**
-       * NOTE: we're not comparing this.props and nextProps here, because I didn't want to write a
-       * function for deep object comparison. I don't know if this hurts performance a lot, maybe
-       * we do need to compare those objects.
-       */
-      Object.assign(this.vueInstance.$data, props);
+    key: 'componentDidMount',
+    value: function componentDidMount() {
+      this.updateVueComponent();
+    }
+  }, {
+    key: 'componentDidUpdate',
+    value: function componentDidUpdate() {
+      this.updateVueComponent();
     }
   }, {
     key: 'componentWillUnmount',
@@ -265,14 +258,27 @@ var VueContainer = function (_React$Component) {
     }
   }, {
     key: 'updateVueComponent',
-    value: function updateVueComponent(prevComponent, nextComponent) {
-      this.currentVueComponent = nextComponent;
+    value: function updateVueComponent() {
+      var _props = this.props,
+          component = _props.component,
+          props = objectWithoutProperties(_props, ['component']);
+
+
+      if (this.currentVueComponent !== component) {
+        /**
+        * Replace the component in the Vue instance and update it.
+        */
+        this.currentVueComponent = component;
+        this.vueInstance.$options.components[VUE_COMPONENT_NAME] = component;
+        this.vueInstance.$forceUpdate();
+      }
 
       /**
-       * Replace the component in the Vue instance and update it.
+       * NOTE: we're not comparing this.props and nextProps here, because I didn't want to write a
+       * function for deep object comparison. I don't know if this hurts performance a lot, maybe
+       * we do need to compare those objects.
        */
-      this.vueInstance.$options.components[VUE_COMPONENT_NAME] = nextComponent;
-      this.vueInstance.$forceUpdate();
+      Object.assign(this.vueInstance.$data, props);
     }
   }, {
     key: 'render',
@@ -281,7 +287,7 @@ var VueContainer = function (_React$Component) {
     }
   }]);
   return VueContainer;
-}(React.Component);
+}(React.PureComponent);
 
 var makeReactContainer = function makeReactContainer(Component) {
   var _class, _temp;
